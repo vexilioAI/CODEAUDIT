@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Audit Pro by Vexilio - AI Powered Code Review</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0f3460 100%);
+            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(0, 150, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255, 0, 150, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            background: linear-gradient(135deg, #00d4ff 0%, #ff006e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            color: #00d4ff;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        .brand-tag {
+            margin-top: 12px;
+            font-size: 0.95em;
+            color: #ff006e;
+            letter-spacing: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: rgba(15, 52, 96, 0.4);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 212, 255, 0.6);
+            box-shadow: 0 12px 48px rgba(0, 212, 255, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00d4ff;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(10, 14, 39, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            background: rgba(10, 14, 39, 0.95);
+        }
+
+        textarea {
+            min-height: 300px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #0a0e27;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+        }
+
+        button.secondary:hover {
+            background: rgba(0, 212, 255, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(0, 212, 255, 0.2);
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #00d4ff;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .results {
+            display: none;
+            width: 100%;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .grade-display {
+            text-align: center;
+            padding: 40px;
+            background: rgba(15, 52, 96, 0.6);
+            border: 2px solid rgba(0, 212, 255, 0.5);
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .grade-letter {
+            font-size: 6em;
+            font-weight: 900;
+            margin: 20px 0;
+            letter-spacing: 5px;
+        }
+
+        .grade-a { color: #00ff00; }
+        .grade-b { color: #7fff00; }
+        .grade-c { color: #ffff00; }
+        .grade-d { color: #ff8800; }
+        .grade-f { color: #ff0000; }
+
+        .grade-description {
+            font-size: 1.2em;
+            margin-top: 15px;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .grade-score {
+            font-size: 1.1em;
+            color: #a0a0a0;
+            margin-top: 10px;
+        }
+
+        .audit-section {
+            margin-bottom: 30px;
+        }
+
+        .audit-section h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-size: 1.3em;
+            letter-spacing: 1px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .audit-item {
+            background: rgba(10, 14, 39, 0.5);
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #00d4ff;
+            border-radius: 8px;
+        }
+
+        .audit-item.positive {
+            border-left-color: #00ff00;
+        }
+
+        .audit-item.negative {
+            border-left-color: #ff0000;
+        }
+
+        .audit-item.warning {
+            border-left-color: #ffff00;
+        }
+
+        .audit-item-title {
+            font-weight: 700;
+            color: #e0e0e0;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            font-size: 0.95em;
+            letter-spacing: 0.5px;
+        }
+
+        .audit-item-text {
+            color: #b0b0b0;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .recommendations {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .recommendations h4 {
+            color: #00ff00;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .recommendation-item {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .recommendation-item::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            color: #ff6b6b;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .success {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 255, 0, 0.5);
+            color: #7fff00;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 4px solid #00d4ff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .token-count {
+            font-size: 0.85em;
+            color: #00d4ff;
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        .provider-badge {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.3);
+            border: 1px solid #00d4ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            margin-top: 10px;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #00d4ff;
+            opacity: 0.6;
+            font-size: 0.9em;
+        }
+
+        .developed-by {
+            margin-top: 8px;
+            color: #ff006e;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CODE AUDIT PRO</h1>
+            <p class="subtitle">AI-Powered Code Review & Analysis</p>
+            <p class="brand-tag">by VEXILIO</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel - Configuration -->
+            <div class="card">
+                <h2>⚙️ Configuration</h2>
+
+                <div class="form-group">
+                    <label for="apiProvider">AI Provider</label>
+                    <select id="apiProvider">
+                        <option value="openai">OpenAI (GPT-4)</option>
+                        <option value="claude">Claude (Anthropic)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="apiKey">API Key</label>
+                    <input 
+                        type="password" 
+                        id="apiKey" 
+                        placeholder="Enter your API key here"
+                    >
+                    <div class="info-box">
+                        OpenAI: Get from <strong>platform.openai.com/api-keys</strong><br>
+                        Claude: Get from <strong>console.anthropic.com/keys</strong><br><br>
+                        🔒 Your key is used only in your browser to call the AI provider directly — it is never sent to or stored by Vexilio.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="codeLanguage">Programming Language</label>
+                    <select id="codeLanguage">
+                        <option value="">Auto-detect</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="csharp">C#</option>
+                        <option value="cpp">C++</option>
+                        <option value="php">PHP</option>
+                        <option value="ruby">Ruby</option>
+                        <option value="go">Go</option>
+                        <option value="rust">Rust</option>
+                        <option value="typescript">TypeScript</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="focusArea">Focus Area (Optional)</label>
+                    <select id="focusArea">
+                        <option value="">All aspects</option>
+                        <option value="security">Security & Best Practices</option>
+                        <option value="performance">Performance Optimization</option>
+                        <option value="readability">Code Readability & Style</option>
+                        <option value="testing">Testing & Documentation</option>
+                        <option value="architecture">Architecture & Design</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Right Panel - Code Input -->
+            <div class="card">
+                <h2>📝 Code Input</h2>
+
+                <div class="form-group">
+                    <label for="projectName">Project/File Name (Optional)</label>
+                    <input 
+                        type="text" 
+                        id="projectName" 
+                        placeholder="e.g., app.js, user-service.py"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="codeInput">Paste Your Code Here</label>
+                    <textarea 
+                        id="codeInput" 
+                        placeholder="Paste your code here..."
+                    ></textarea>
+                    <div class="token-count" id="tokenCount"></div>
+                </div>
+
+                <div class="button-group">
+                    <button id="runBtn" onclick="auditCode()">🚀 Run Audit</button>
+                    <button id="clearBtn" class="secondary" onclick="clearForm()">🔄 Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Analyzing your code with AI...</div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results" id="results">
+            <div class="grade-display">
+                <div>Overall Grade</div>
+                <div class="grade-letter" id="gradeDisplay">-</div>
+                <div class="grade-description" id="gradeDescription">-</div>
+                <div class="grade-score" id="gradeScore">-</div>
+            </div>
+
+            <div class="card">
+                <div id="auditResults"></div>
+                <div id="recommendations"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Code Audit Pro v1.0 | Powered by AI | Keep your code clean 🚀</p>
+            <p class="developed-by">Developed by Vexilio Team</p>
+        </div>
+    </div>
+
+    <script>
+        // Estimate tokens (rough approximation)
+        function updateTokenCount() {
+            const code = document.getElementById('codeInput').value;
+            const estimatedTokens = Math.ceil(code.length / 4);
+            const tokenEl = document.getElementById('tokenCount');
+            if (estimatedTokens > 0) {
+                tokenEl.textContent = `Estimated tokens: ${estimatedTokens.toLocaleString()}`;
+            } else {
+                tokenEl.textContent = '';
+            }
+        }
+
+        document.getElementById('codeInput').addEventListener('input', updateTokenCount);
+
+        async function auditCode() {
+            const apiProvider = document.getElementById('apiProvider').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const code = document.getElementById('codeInput').value;
+            const projectName = document.getElementById('projectName').value || 'Untitled';
+            const language = document.getElementById('codeLanguage').value;
+            const focusArea = document.getElementById('focusArea').value;
+
+            // Validation
+            if (!apiKey.trim()) {
+                showError('Please enter your API key');
+                return;
+            }
+
+            if (!code.trim()) {
+                showError('Please paste some code to analyze');
+                return;
+            }
+
+            if (code.length > 50000) {
+                showError('Code is too large. Please keep it under 50,000 characters.');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').classList.remove('active');
+
+            const runBtn = document.getElementById('runBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            runBtn.disabled = true;
+            clearBtn.disabled = true;
+
+            try {
+                let auditResult;
+
+                if (apiProvider === 'openai') {
+                    auditResult = await auditWithOpenAI(apiKey, code, projectName, language, focusArea);
+                } else if (apiProvider === 'claude') {
+                    auditResult = await auditWithClaude(apiKey, code, projectName, language, focusArea);
+                }
+
+                displayResults(auditResult);
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('results').classList.add('active');
+
+            } catch (error) {
+                document.getElementById('loading').classList.remove('active');
+                showError(`Error: ${error.message}`);
+            } finally {
+                runBtn.disabled = false;
+                clearBtn.disabled = false;
+            }
+        }
+
+        async function auditWithOpenAI(apiKey, code, projectName, language, focusArea) {
+            const prompt = buildAuditPrompt(code, projectName, language, focusArea);
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4-turbo-preview',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'You are an expert code reviewer. Provide detailed analysis in JSON format only.'
+                        },
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 2000
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'OpenAI API error');
+            }
+
+            const data = await response.json();
+            const content = data.choices[0].message.content;
+            return parseAuditResponse(content);
+        }
+
+        async function auditWithClaude(apiKey, code, projectName, language, focusArea) {
+            const prompt = buildAuditPrompt(code, projectName, language, focusArea);
+
+            // anthropic-dangerous-direct-browser-access je Anthropic-ov zvanicni opt-in header
+            // koji dozvoljava CORS pozive direktno iz browsera za BYOK (bring-your-own-key) alate.
+            // Kljuc pripada korisniku i ostaje samo u njegovom browseru, nikad se ne salje nama.
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-3-5-sonnet-20241022',
+                    max_tokens: 2000,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: prompt
+                        }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'Claude API error');
+            }
+
+            const data = await response.json();
+            const content = data.content[0].text;
+            return parseAuditResponse(content);
+        }
+
+        function buildAuditPrompt(code, projectName, language, focusArea) {
+            const focusText = focusArea ? `Focus on: ${focusArea}. ` : '';
+
+            return `You are an expert code reviewer. Analyze the following code and provide a detailed JSON response.
+
+File: ${projectName}
+Language: ${language || 'auto-detect'}
+${focusText}
+
+CODE TO REVIEW:
+\`\`\`
+${code}
+\`\`\`
+
+Respond with ONLY valid JSON (no markdown, no code blocks) in this exact format:
+{
+  "grade": "A",
+  "score": 92,
+  "description": "Excellent code quality",
+  "strengths": [
+    {"title": "Clean Architecture", "description": "Well-organized and modular structure"},
+    {"title": "Good Error Handling", "description": "Comprehensive error management"}
+  ],
+  "weaknesses": [
+    {"title": "Missing Tests", "description": "No unit tests found"}
+  ],
+  "warnings": [
+    {"title": "Performance", "description": "Consider optimizing database queries"}
+  ],
+  "recommendations": [
+    "Add comprehensive unit tests",
+    "Implement logging for debugging",
+    "Add TypeScript for type safety",
+    "Document public APIs with JSDoc",
+    "Consider using a linter (ESLint)"
+  ],
+  "securityIssues": [
+    {"title": "Input Validation", "description": "Add validation for user inputs"}
+  ]
+}`;
+        }
+
+        function parseAuditResponse(content) {
+            let jsonStr = content;
+            
+            // Remove markdown code blocks if present
+            if (jsonStr.includes('```json')) {
+                jsonStr = jsonStr.split('```json')[1].split('```')[0];
+            } else if (jsonStr.includes('```')) {
+                jsonStr = jsonStr.split('```')[1].split('```')[0];
+            }
+            
+            jsonStr = jsonStr.trim();
+            
+            let data;
+            try {
+                data = JSON.parse(jsonStr);
+            } catch (e) {
+                // Fallback: try to extract JSON object
+                const match = jsonStr.match(/\{[\s\S]*\}/);
+                if (match) {
+                    data = JSON.parse(match[0]);
+                } else {
+                    throw new Error('Could not parse AI response as JSON');
+                }
+            }
+
+            // Normalizuj sve ocekivane kljuceve sa fallback vrednostima.
+            // Ovo stiti od "Cannot read properties of undefined" ako model
+            // izostavi neki niz umesto da vrati prazan [] (retko, ali se desava).
+            return {
+                grade: data.grade || 'N/A',
+                score: typeof data.score === 'number' ? data.score : 0,
+                description: data.description || '',
+                strengths: Array.isArray(data.strengths) ? data.strengths : [],
+                weaknesses: Array.isArray(data.weaknesses) ? data.weaknesses : [],
+                warnings: Array.isArray(data.warnings) ? data.warnings : [],
+                recommendations: Array.isArray(data.recommendations) ? data.recommendations : [],
+                securityIssues: Array.isArray(data.securityIssues) ? data.securityIssues : []
+            };
+        }
+
+        function displayResults(result) {
+            // Ako se AI provider ikad promeni ili posalje malo slovo, ovo i dalje radi
+            const gradeKey = String(result.grade).toUpperCase();
+            const gradeColor = {
+                'A': 'grade-a',
+                'B': 'grade-b',
+                'C': 'grade-c',
+                'D': 'grade-d',
+                'F': 'grade-f'
+            }[gradeKey] || 'grade-a';
+
+            // Grade kartica je mogla biti sakrivena zbog prethodne greske - vrati je nazad
+            const gradeDisplayCard = document.querySelector('.grade-display');
+            if (gradeDisplayCard) gradeDisplayCard.style.display = '';
+
+            document.getElementById('gradeDisplay').textContent = gradeKey;
+            document.getElementById('gradeDisplay').className = `grade-letter ${gradeColor}`;
+            document.getElementById('gradeDescription').textContent = result.description;
+            document.getElementById('gradeScore').textContent = `Score: ${result.score}/100`;
+
+            let auditHTML = '';
+
+            if (result.strengths && result.strengths.length > 0) {
+                auditHTML += '<div class="audit-section">';
+                auditHTML += '<h3>✅ Strengths</h3>';
+                result.strengths.forEach(item => {
+                    auditHTML += `
+                        <div class="audit-item positive">
+                            <div class="audit-item-title">${item.title}</div>
+                            <div class="audit-item-text">${item.description}</div>
+                        </div>
+                    `;
+                });
+                auditHTML += '</div>';
+            }
+
+            if (result.weaknesses && result.weaknesses.length > 0) {
+                auditHTML += '<div class="audit-section">';
+                auditHTML += '<h3>❌ Weaknesses</h3>';
+                result.weaknesses.forEach(item => {
+                    auditHTML += `
+                        <div class="audit-item negative">
+                            <div class="audit-item-title">${item.title}</div>
+                            <div class="audit-item-text">${item.description}</div>
+                        </div>
+                    `;
+                });
+                auditHTML += '</div>';
+            }
+
+            if (result.warnings && result.warnings.length > 0) {
+                auditHTML += '<div class="audit-section">';
+                auditHTML += '<h3>⚠️ Warnings</h3>';
+                result.warnings.forEach(item => {
+                    auditHTML += `
+                        <div class="audit-item warning">
+                            <div class="audit-item-title">${item.title}</div>
+                            <div class="audit-item-text">${item.description}</div>
+                        </div>
+                    `;
+                });
+                auditHTML += '</div>';
+            }
+
+            if (result.securityIssues && result.securityIssues.length > 0) {
+                auditHTML += '<div class="audit-section">';
+                auditHTML += '<h3>🔒 Security Issues</h3>';
+                result.securityIssues.forEach(item => {
+                    auditHTML += `
+                        <div class="audit-item negative">
+                            <div class="audit-item-title">${item.title}</div>
+                            <div class="audit-item-text">${item.description}</div>
+                        </div>
+                    `;
+                });
+                auditHTML += '</div>';
+            }
+
+            document.getElementById('auditResults').innerHTML = auditHTML;
+
+            if (result.recommendations && result.recommendations.length > 0) {
+                let recHTML = '<div class="recommendations">';
+                recHTML += '<h4>💡 Recommendations</h4>';
+                result.recommendations.forEach(rec => {
+                    recHTML += `<div class="recommendation-item">${rec}</div>`;
+                });
+                recHTML += '</div>';
+                document.getElementById('recommendations').innerHTML = recHTML;
+            }
+        }
+
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.classList.add('active');
+
+            // Sakrij karticu sa ocenom da ne ostanu stari/prazni podaci na ekranu uz gresku
+            const gradeDisplayCard = document.querySelector('.grade-display');
+            if (gradeDisplayCard) gradeDisplayCard.style.display = 'none';
+
+            document.getElementById('auditResults').innerHTML = `<div class="error">${message}</div>`;
+            document.getElementById('recommendations').innerHTML = '';
+        }
+
+        function clearForm() {
+            document.getElementById('codeInput').value = '';
+            document.getElementById('projectName').value = '';
+            document.getElementById('results').classList.remove('active');
+            updateTokenCount();
+        }
+    </script>
+</body>
+</html>
